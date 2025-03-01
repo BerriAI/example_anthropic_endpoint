@@ -27,7 +27,7 @@ def data_generator():
                     "id": f"chatcmpl-{response_id}",
                     "object": "chat.completion.chunk",
                     "created": 1677652288,
-                    "model": "gpt-3.5-turbo-0125",
+                    "model": "claude-3-5-sonnet-20241022",
                     "choices": [{"index": 0, "delta": {"content": word}}],
                 }
         try:
@@ -57,7 +57,7 @@ async def completion(request: Request):
                 "text": "I'm sorry, but the string of characters \"123450000s0 p kk\" doesn't appear to have any clear meaning or context. It seems to be a random combination of numbers and letters. If you could provide more information or clarify what you're trying to communicate, I'll do my best to assist you."
                 }
             ],
-            "model": "claude-3-opus-20240229",
+            "model": "claude-3-5-sonnet-20241022",
             "stop_reason": "end_turn",
             "stop_sequence": None,
             "usage": {
