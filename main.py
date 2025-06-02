@@ -40,6 +40,8 @@ def data_generator():
 @app.post("/v1/messages")
 async def completion(request: Request):
     data = await request.json()
+    import time
+    time.sleep(55)
 
     if data.get("stream") == True:
         return StreamingResponse(
