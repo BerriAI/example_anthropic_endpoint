@@ -37,45 +37,37 @@ def data_generator():
 
 
 def large_data_generator():
-    """Generate a large streaming response with 450 chunks"""
-    response_id = uuid.uuid4().hex
+    """Generate a large streaming response with 100 chunks in Anthropic format"""
+    message_id = f"msg_{uuid.uuid4().hex}"
     
-    for i in range(450):
+    for i in range(100):
         # Create varied content for each chunk
         if i % 50 == 0:
-            content = f"\n\n--- Chunk {i+1} of 450 ---\n"
+            content = f"\n\n--- Chunk {i+1} of 100 ---\n"
         elif i % 10 == 0:
             content = f" [Milestone {i+1}] "
         else:
             content = f"Chunk_{i+1:03d} "
+        content = content * 10
         
+        # Anthropic streaming format
         chunk = {
-            "id": f"chatcmpl-{response_id}",
-            "object": "chat.completion.chunk", 
-            "created": 1677652288,
-            "model": "claude-3-5-sonnet-20241022",
-            "choices": [{"index": 0, "delta": {"content": content}}],
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {
+                "type": "text_delta",
+                "text": content
+            },
+            "model": "claude-3-7-sonnet-latest"
         }
         
-        try:
-            yield f"data: {json.dumps(chunk.dict())}\n\n"
-        except:
-            yield f"data: {json.dumps(chunk)}\n\n"
+        yield f"data: {json.dumps(chunk)}\n\n"
     
     # Send final chunk to indicate completion
     final_chunk = {
-        "id": f"chatcmpl-{response_id}",
-        "object": "chat.completion.chunk",
-        "created": 1677652288,
-        "model": "claude-3-5-sonnet-20241022",
-        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+        "type": "message_stop"
     }
-    try:
-        yield f"data: {json.dumps(final_chunk.dict())}\n\n"
-    except:
-        yield f"data: {json.dumps(final_chunk)}\n\n"
-    
-    yield "data: [DONE]\n\n"
+    yield f"data: {json.dumps(final_chunk)}\n\n"
 
 
 # for completion
@@ -113,9 +105,13 @@ async def completion(request: Request):
         return response
 
 
-@app.get("/v1/messages/large-stream")
-async def large_stream():
+@app.post("/large-stream/v1/messages")
+async def large_stream(request: Request):
     """Endpoint that returns a large streaming response with 450 chunks"""
+    data = await request.json()
+    
+    # Always return streaming response for this large stream endpoint
+    # But you could check data.get("stream") if you want to make it conditional
     return StreamingResponse(
         content=large_data_generator(),
         media_type="text/event-stream",
