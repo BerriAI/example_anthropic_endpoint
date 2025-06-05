@@ -36,6 +36,48 @@ def data_generator():
             yield f"data: {json.dumps(chunk)}\n\n"
 
 
+def large_data_generator():
+    """Generate a large streaming response with 450 chunks"""
+    response_id = uuid.uuid4().hex
+    
+    for i in range(450):
+        # Create varied content for each chunk
+        if i % 50 == 0:
+            content = f"\n\n--- Chunk {i+1} of 450 ---\n"
+        elif i % 10 == 0:
+            content = f" [Milestone {i+1}] "
+        else:
+            content = f"Chunk_{i+1:03d} "
+        
+        chunk = {
+            "id": f"chatcmpl-{response_id}",
+            "object": "chat.completion.chunk", 
+            "created": 1677652288,
+            "model": "claude-3-5-sonnet-20241022",
+            "choices": [{"index": 0, "delta": {"content": content}}],
+        }
+        
+        try:
+            yield f"data: {json.dumps(chunk.dict())}\n\n"
+        except:
+            yield f"data: {json.dumps(chunk)}\n\n"
+    
+    # Send final chunk to indicate completion
+    final_chunk = {
+        "id": f"chatcmpl-{response_id}",
+        "object": "chat.completion.chunk",
+        "created": 1677652288,
+        "model": "claude-3-5-sonnet-20241022",
+        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+    }
+    try:
+        yield f"data: {json.dumps(final_chunk.dict())}\n\n"
+    except:
+        yield f"data: {json.dumps(final_chunk)}\n\n"
+    
+    yield "data: [DONE]\n\n"
+
+
 # for completion
 @app.post("/v1/messages")
 async def completion(request: Request):
@@ -70,6 +112,18 @@ async def completion(request: Request):
 
         return response
 
+
+@app.get("/v1/messages/large-stream")
+async def large_stream():
+    """Endpoint that returns a large streaming response with 450 chunks"""
+    return StreamingResponse(
+        content=large_data_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
 
 
 if __name__ == "__main__":
